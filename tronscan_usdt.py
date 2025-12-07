@@ -7,6 +7,8 @@ from pathlib import Path
 
 import requests
 
+from gsheets_client import write_usdt_rows_to_sheet
+
 
 USDT_TRC20_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 ROOT_DIR = Path(__file__).resolve().parent
@@ -177,15 +179,13 @@ def normalize_usdt_transfers(raw_transfers: list[dict], my_address: str) -> list
     return normalized
 
 
-def export_usdt_transfers_to_csv(
+def get_normalized_usdt_rows(
     address: str,
-    output_path: str,
     from_date: str | None = None,
     to_date: str | None = None,
-) -> None:
+) -> list[dict]:
     """
-    Fetch, normalize, and write TRC20 USDT transfers for the given address to a CSV file.
-    Orchestrates retrieval and normalization, then writes the records to output_path with useful columns.
+    Fetch and normalize TRC20 USDT transfers for the given address, optionally filtering by date range.
     """
     raw_transfers = fetch_usdt_trc20_transfers(address, limit_per_page=50, max_pages=100)
     rows = normalize_usdt_transfers(raw_transfers, address)
@@ -210,6 +210,20 @@ def export_usdt_transfers_to_csv(
             filtered.append(row)
         rows = filtered
 
+    return rows
+
+
+def export_usdt_transfers_to_csv(
+    address: str,
+    output_path: str,
+    from_date: str | None = None,
+    to_date: str | None = None,
+) -> None:
+    """
+    Fetch, normalize, optionally filter, and write TRC20 USDT transfers for the given address to a CSV file.
+    """
+    rows = get_normalized_usdt_rows(address, from_date=from_date, to_date=to_date)
+
     fieldnames = ["DATE", "CAT", "INFO", "SYMB", "QTY", "RATE", "AMOUNT", "ACC"]
 
     with open(output_path, mode="w", newline="", encoding="utf-8") as f:
@@ -218,6 +232,22 @@ def export_usdt_transfers_to_csv(
         writer.writerows(rows)
 
     print(f"Wrote {len(rows)} rows to {output_path}")
+
+
+def export_usdt_transfers_to_sheet(
+    address: str,
+    label_suffix: str,
+    spreadsheet_id: str,
+    from_date: str | None = None,
+    to_date: str | None = None,
+) -> None:
+    """
+    Fetch normalized USDT rows for the given address and write them into a Google Sheet worksheet named 'USDT_<label_suffix>_RAW'.
+    """
+    rows = get_normalized_usdt_rows(address, from_date=from_date, to_date=to_date)
+    worksheet_name = f"USDT_{label_suffix}_RAW"
+    write_usdt_rows_to_sheet(spreadsheet_id, worksheet_name, rows)
+    print(f"Wrote {len(rows)} rows to Google Sheet tab {worksheet_name}")
 
 
 if __name__ == "__main__":
@@ -239,6 +269,10 @@ if __name__ == "__main__":
         "--to-date",
         help="Only include transfers on or before this date (YYYY-MM-DD).",
     )
+    parser.add_argument(
+        "--sheet-id",
+        help="Optional Google Sheets spreadsheet ID. If provided, normalized rows will also be written into worksheet tabs (USDT_<label>_RAW).",
+    )
     args = parser.parse_args()
 
     ident = args.wallet.strip()
@@ -253,6 +287,14 @@ if __name__ == "__main__":
             output_path = f"data/usdt_{suffix}.csv"
             print(f"Exporting USDT transfers for internal wallet {suffix} -> {addr} into {output_path}")
             export_usdt_transfers_to_csv(addr, output_path, from_date=args.from_date, to_date=args.to_date)
+            if args.sheet_id:
+                export_usdt_transfers_to_sheet(
+                    addr,
+                    suffix,
+                    args.sheet_id,
+                    from_date=args.from_date,
+                    to_date=args.to_date,
+                )
         raise SystemExit(0)
 
     try:
@@ -275,3 +317,11 @@ if __name__ == "__main__":
 
     print(f"Exporting USDT transfers for {args.wallet} -> {address} into {output_path}")
     export_usdt_transfers_to_csv(address, output_path, from_date=args.from_date, to_date=args.to_date)
+    if args.sheet_id:
+        export_usdt_transfers_to_sheet(
+            address,
+            suffix,
+            args.sheet_id,
+            from_date=args.from_date,
+            to_date=args.to_date,
+        )
