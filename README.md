@@ -9,7 +9,7 @@ The first module implemented is **USDT on TRON (TRC20)** using Tronscan. Next mo
 ## Current features (v1 – TRC USDT)
 
 - **TRON USDT ingestion**
-  - Fetch TRC20 USDT transfers for a given TRON address using the TronScan API.
+  - Fetch TRC20 USDT transfers for a given TRON address using the Tronscan API.
   - Normalize raw transfers into a standard schema:
 
     `DATE, CAT, INFO, SYMB, QTY, RATE, AMOUNT, ACC`
@@ -52,6 +52,8 @@ WalletOS/
   core/
     __init__.py
     gsheets_client.py        # Google Sheets client using service account
+    tron_usdt.py             # TRC20 USDT fetch/normalize/export logic
+    wallets.py               # wallet_directory loader + helpers
   credentials/               # private files (ignored by git)
     gsheets_service_account.json
     (later) etherscan_api_key.txt
@@ -63,7 +65,9 @@ WalletOS/
     wallet_directory.csv     # wallet directory / client master (NOT tracked in git)
   scripts/
     sync_tron_usdt_my_wallets.sh  # shell helper for bulk sync of internal wallets
-  tronscan_usdt.py           # current Tron USDT CLI & glue
+  apps/
+    tron_usdt_cli.py         # TRC20 USDT CLI
+  tronscan_usdt.py           # thin wrapper calling apps/tron_usdt_cli.main()
   pyproject.toml             # Poetry project configuration
   poetry.lock                # locked dependency versions
   README.md
@@ -167,7 +171,7 @@ and you have a valid Google Sheets spreadsheet ID.
 ### 1. Single wallet by label → CSV only
 
 ```bash
-poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01
+poetry run python apps/tron_usdt_cli.py Binance   --from-date 2025-10-01
 ```
 
 - Uses label `Binance` from `wallet_directory.csv`.
@@ -177,10 +181,18 @@ poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01
   outputs/trc_usdt/trc_usdt_Binance.csv
   ```
 
+You can also still use the legacy entrypoint:
+
+```bash
+poetry run python tronscan_usdt.py Binance --from-date 2025-10-01
+```
+
+which internally calls the same CLI.
+
 ### 2. Single wallet by label → CSV + Google Sheet tab
 
 ```bash
-poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
+poetry run python apps/tron_usdt_cli.py Binance   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
 ```
 
 - Same CSV as above.
@@ -191,7 +203,7 @@ poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01   --sheet-id
 ### 3. All internal wallets (`my_wallets`) → CSV only
 
 ```bash
-poetry run python tronscan_usdt.py my_wallets   --from-date 2025-10-01
+poetry run python apps/tron_usdt_cli.py my_wallets   --from-date 2025-10-01
 ```
 
 - Reads all rows with `owner_type = internal` from `wallet_directory.csv`.
@@ -206,7 +218,7 @@ poetry run python tronscan_usdt.py my_wallets   --from-date 2025-10-01
 Using the CLI:
 
 ```bash
-poetry run python tronscan_usdt.py my_wallets   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
+poetry run python apps/tron_usdt_cli.py my_wallets   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
 ```
 
 Or, using the convenience shell script:
@@ -242,12 +254,6 @@ WalletOS is meant to grow beyond TRON USDT. Planned modules:
   - `core/wallets.py` to encapsulate loading and validating `wallet_directory.csv`.
   - Better validation and tools to manage multiple chains per client.
 
-- **Apps layer**
-  - `apps/` directory for dedicated CLIs:
-    - `apps/tron_usdt_cli.py`
-    - `apps/eth_usdt_cli.py`
-  - Existing `scripts/` will wrap these apps for non-technical operators.
-
 - **Reporting / dashboards**
   - Higher-level summary scripts (e.g. daily P&L, per-client flows) built on top of the normalized CSVs/Sheets.
 
@@ -260,9 +266,9 @@ WalletOS is meant to grow beyond TRON USDT. Planned modules:
 ```bash
 cd ~/dev/WalletOS
 poetry install                  # first time
-poetry run python tronscan_usdt.py --help
+poetry run python apps/tron_usdt_cli.py --help
 ```
 
-- `core/` is the place for shared Python logic. For now it contains the Google Sheets client; Tron and future ETH modules will be added here as the project evolves.
+- `core/` is the place for shared Python logic. For now it contains the Google Sheets client, Tron USDT module, and wallet loader. ETH and other modules will be added here as the project evolves.
 
-- `scripts/` is the place for small shell scripts that wrap the CLIs for daily operations.
+- `apps/` contains CLIs (entrypoints). `scripts/` contains small shell scripts that wrap those CLIs for daily operations.
