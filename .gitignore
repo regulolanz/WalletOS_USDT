@@ -3,3 +3,8 @@ __pycache__/
 data/*.csv
 *.pyc
 credentials/
+resources/wallet_directory.csv
+outputs/
+.DS_Store
+.cache-regulolanz
+.ipynb_checkpoints/

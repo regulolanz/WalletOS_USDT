@@ -7,12 +7,12 @@ from pathlib import Path
 
 import requests
 
-from gsheets_client import write_usdt_rows_to_sheet
+from core.gsheets_client import write_usdt_rows_to_sheet
 
 
 USDT_TRC20_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 ROOT_DIR = Path(__file__).resolve().parent
-WALLET_DIR_CSV = ROOT_DIR / "data" / "wallet_directory.csv"
+WALLET_DIR_CSV = ROOT_DIR / "resources" / "wallet_directory.csv"
 
 
 def _load_wallet_directory():
@@ -226,7 +226,10 @@ def export_usdt_transfers_to_csv(
 
     fieldnames = ["DATE", "CAT", "INFO", "SYMB", "QTY", "RATE", "AMOUNT", "ACC"]
 
-    with open(output_path, mode="w", newline="", encoding="utf-8") as f:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with output_path.open(mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -284,7 +287,7 @@ if __name__ == "__main__":
             raise SystemExit(1)
 
         for addr, suffix in wallets:
-            output_path = f"data/usdt_{suffix}.csv"
+            output_path = f"outputs/trc_usdt/trc_usdt_{suffix}.csv"
             print(f"Exporting USDT transfers for internal wallet {suffix} -> {addr} into {output_path}")
             export_usdt_transfers_to_csv(addr, output_path, from_date=args.from_date, to_date=args.to_date)
             if args.sheet_id:
@@ -313,7 +316,7 @@ if __name__ == "__main__":
             suffix = label
         else:
             suffix = address[-6:]
-        output_path = f"data/usdt_{suffix}.csv"
+        output_path = f"outputs/trc_usdt/trc_usdt_{suffix}.csv"
 
     print(f"Exporting USDT transfers for {args.wallet} -> {address} into {output_path}")
     export_usdt_transfers_to_csv(address, output_path, from_date=args.from_date, to_date=args.to_date)

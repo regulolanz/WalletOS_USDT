@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Usage:
-#   ./sync_usdt_my_wallets.sh 2025-12-01
+#   ./scripts/sync_tron_usdt_my_wallets.sh 2025-12-01
 #
 # This will:
 #   - sync all internal wallets (my_wallets)
 #   - from the given FROM_DATE (YYYY-MM-DD)
-#   - update local CSVs
+#   - update local CSVs (outputs/tron_usdt/)
 #   - update Google Sheets RAW tabs (USDT_<label>_RAW)
 
 set -euo pipefail
@@ -17,8 +17,8 @@ if [ -z "$FROM_DATE" ]; then
   exit 1
 fi
 
-# Base directory of this repo
-BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Base directory of this repo = parent of the scripts folder
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # WalletOS Google Sheet ID
 SHEET_ID="1Jad2PoONt--M-_y3RS6T_eqJwBD9uYpI--BWEE3hWfU"
