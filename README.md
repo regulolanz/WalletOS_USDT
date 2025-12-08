@@ -2,7 +2,7 @@
 
 WalletOS is my personal "wallet operating system": a collection of tools to fetch, normalize and sync on-chain activity into clean data for analysis and finance dashboards.
 
-The first module implemented is **USDT on TRON (TRC20)** using TronScan. Next modules will include **USDT on Ethereum (ERC20)** via Etherscan and other reporting apps.
+The first module implemented is **USDT on TRON (TRC20)** using Tronscan. Next modules will include **USDT on Ethereum (ERC20)** via Etherscan and other reporting apps.
 
 ---
 
@@ -17,7 +17,7 @@ The first module implemented is **USDT on TRON (TRC20)** using TronScan. Next mo
 - **Wallet directory / client master**
   - Use `resources/wallet_directory.csv` as a mini "core banking" file:
     - Columns: `address, label, owner_type`
-    - `owner_type = internal` → my own wallets (Bluewave, Binance_RL, etc.).
+    - `owner_type = internal` → my own wallets (Bluewave, Binance, etc.).
     - `owner_type = client` → external clients / counterparties.
   - `CAT` is filled from this file using the beneficiary's label.
   - Internal wallets are included automatically in the `my_wallets` flow.
@@ -25,17 +25,17 @@ The first module implemented is **USDT on TRON (TRC20)** using TronScan. Next mo
 - **CSV exports**
   - Per wallet CSVs written to:
 
+    ```text
     outputs/trc_usdt/trc_usdt_<LABEL>.csv
-
-  - e.g. `trc_usdt_Binance_RL.csv`, `trc_usdt_Bluewave_8.csv`.
+    ```
 
 - **Google Sheets integration**
   - Optional Google Sheets export:
     - Write normalized data into worksheet tabs:
 
-      USDT_<LABEL>_RAW
+      `USDT_<LABEL>_RAW`
 
-      (for example `USDT_Binance_RL_RAW`, `USDT_Bluewave_1_RAW`).
+      (for example `USDT_Binance_RAW`, `USDT_Bluewave_1_RAW`).
   - Designed so Google Sheets can use these tabs as RAW sources for higher-level dashboards.
 
 - **Bulk sync for internal wallets**
@@ -47,6 +47,7 @@ The first module implemented is **USDT on TRON (TRC20)** using TronScan. Next mo
 
 ## Repository layout
 
+```text
 WalletOS/
   core/
     __init__.py
@@ -56,8 +57,7 @@ WalletOS/
     (later) etherscan_api_key.txt
   outputs/
     trc_usdt/                # generated TRC20 USDT CSVs
-      trc_usdt_Binance_RL.csv
-      trc_usdt_Bluewave_1.csv
+      trc_usdt_<LABEL>.csv
       ...
   resources/
     wallet_directory.csv     # wallet directory / client master (NOT tracked in git)
@@ -68,15 +68,16 @@ WalletOS/
   poetry.lock                # locked dependency versions
   README.md
   .gitignore
+```
 
-Note: credentials/ and resources/wallet_directory.csv are intentionally ignored by git and must be provided manually on each machine.
+> Note: `credentials/` and `resources/wallet_directory.csv` are intentionally ignored by git and must be provided manually on each machine.
 
 ---
 
 ## Requirements
 
 - Python 3.12+ (or compatible 3.x).
-- Poetry installed on the system.
+- [Poetry](https://python-poetry.org/) installed on the system.
 - A TronScan-compatible TRON address with USDT TRC20 activity.
 - (Optional) A Google Cloud service account for Google Sheets.
 
@@ -86,15 +87,21 @@ Note: credentials/ and resources/wallet_directory.csv are intentionally ignored 
 
 ### 1. Clone the repo
 
+```bash
 cd ~/dev
-git clone https://github.com/regulolanz/WalletOS.git
+git clone https://github.com/USERNAME/WalletOS.git
 cd WalletOS
+```
+
+Replace `USERNAME` with your GitHub username if needed.
 
 ### 2. Install Python dependencies
 
+```bash
 poetry install
+```
 
-This reads pyproject.toml and poetry.lock and installs the exact dependency versions.
+This reads `pyproject.toml` and `poetry.lock` and installs the exact dependency versions.
 
 ### 3. Configure credentials
 
@@ -102,42 +109,48 @@ This reads pyproject.toml and poetry.lock and installs the exact dependency vers
 
 1. In Google Cloud Console:
    - Create a project (e.g. "WalletOS").
-   - Enable the Google Sheets API.
-   - Create a service account and download its JSON key.
+   - Enable the **Google Sheets API**.
+   - Create a **service account** and download its JSON key.
 
 2. Place the JSON file in:
 
+```text
 credentials/gsheets_service_account.json
+```
 
-3. Open the target Google Sheet (e.g. "WalletOS") and share it with the service account email (Editor access).
+3. Open the target Google Sheet (e.g. "WalletOS") and **share** it with the service account email (Editor access).
 
-4. Copy the spreadsheet ID from the URL (the long string between /d/ and /edit).
+4. Copy the **spreadsheet ID** from the URL (the long string between `/d/` and `/edit`).
 
 #### 3.2. Wallet directory
 
 The wallet directory lives at:
 
+```text
 resources/wallet_directory.csv
+```
 
 - This file is not tracked in git.
 - It can be edited in any spreadsheet app and exported as CSV.
 
 Expected columns:
 
+```text
 address,label,owner_type
-TWo82CEE5jjyjF76f9ACQ6tkBMRP26pDWo,Binance_RL,internal
-TRrufu5JkXDj6aUnFwFeBrfKj8TVD95dwh,Bluewave_1,internal
+ADDRESS_1,Binance,internal
+ADDRESS_2,Bluewave_1,internal
 ...
-TQbyABxsTSWYohhF5QDCFG8UTnVS3Nrra4,ChrisBarkovic_1,client
+ADDRESS_N,SomeClient,client
 ...
+```
 
 Rules:
 
-- address → full chain address.
-- label → short name used in CAT and tab names.
-- owner_type:
-  - "internal" → included in my_wallets bulk sync.
-  - "client" → used for CAT but not included in my_wallets.
+- `address` → full chain address.
+- `label` → short name used in CAT and tab names.
+- `owner_type`:
+  - `"internal"` → included in `my_wallets` bulk sync.
+  - `"client"` → used for CAT but not included in `my_wallets`.
 
 ---
 
@@ -145,59 +158,73 @@ Rules:
 
 Assume the repo root is:
 
+```bash
 cd ~/dev/WalletOS
+```
 
-and your Google Sheet ID is:
-
-1Jad2PoONt--M-_y3RS6T_eqJwBD9uYpI--BWEE3hWfU
+and you have a valid Google Sheets spreadsheet ID.
 
 ### 1. Single wallet by label → CSV only
 
-poetry run python tronscan_usdt.py Binance_RL --from-date 2025-10-01
+```bash
+poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01
+```
 
-- Uses label Binance_RL from wallet_directory.csv.
+- Uses label `Binance` from `wallet_directory.csv`.
 - Writes:
 
-  outputs/trc_usdt/trc_usdt_Binance_RL.csv
+  ```text
+  outputs/trc_usdt/trc_usdt_Binance.csv
+  ```
 
 ### 2. Single wallet by label → CSV + Google Sheet tab
 
-poetry run python tronscan_usdt.py Binance_RL --from-date 2025-10-01 --sheet-id 1Jad2PoONt--M-_y3RS6T_eqJwBD9uYpI--BWEE3hWfU
+```bash
+poetry run python tronscan_usdt.py Binance   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
+```
 
 - Same CSV as above.
 - Also writes to Google Sheets tab:
 
-  USDT_Binance_RL_RAW
+  `USDT_Binance_RAW`
 
-### 3. All internal wallets (my_wallets) → CSV only
+### 3. All internal wallets (`my_wallets`) → CSV only
 
-poetry run python tronscan_usdt.py my_wallets --from-date 2025-10-01
+```bash
+poetry run python tronscan_usdt.py my_wallets   --from-date 2025-10-01
+```
 
-- Reads all rows with owner_type = internal from wallet_directory.csv.
+- Reads all rows with `owner_type = internal` from `wallet_directory.csv`.
 - For each internal wallet, writes:
 
+  ```text
   outputs/trc_usdt/trc_usdt_<LABEL>.csv
+  ```
 
 ### 4. All internal wallets → CSV + Google Sheets tabs
 
 Using the CLI:
 
-poetry run python tronscan_usdt.py my_wallets --from-date 2025-10-01 --sheet-id 1Jad2PoONt--M-_y3RS6T_eqJwBD9uYpI--BWEE3hWfU
+```bash
+poetry run python tronscan_usdt.py my_wallets   --from-date 2025-10-01   --sheet-id <SPREADSHEET_ID>
+```
 
 Or, using the convenience shell script:
 
+```bash
 ./scripts/sync_tron_usdt_my_wallets.sh 2025-10-01
+```
 
 The script:
 
 - cd's into the repo root.
-- Calls the CLI with the proper --sheet-id.
+- Calls the CLI with the proper `--sheet-id`.
 - Syncs all internal wallets from the given date.
 
 Each internal wallet will update:
 
-- outputs/trc_usdt/trc_usdt_<LABEL>.csv
-- USDT_<LABEL>_RAW in the Google Sheet.
+- `outputs/trc_usdt/trc_usdt_<LABEL>.csv`
+- `USDT_<LABEL>_RAW` in the Google Sheet.
 
 ---
 
@@ -205,23 +232,23 @@ Each internal wallet will update:
 
 WalletOS is meant to grow beyond TRON USDT. Planned modules:
 
-- ETH USDT (ERC20 via Etherscan)
-  - New core module: core/eth_usdt.py
-  - New CLI: apps/eth_usdt_cli.py
-  - Outputs to outputs/erc_usdt/erc_usdt_<LABEL>.csv
-  - Sheets tabs: USDT_ETH_<LABEL>_RAW (or similar).
+- **ETH USDT (ERC20 via Etherscan)**
+  - New core module: `core/eth_usdt.py`
+  - New CLI: `apps/eth_usdt_cli.py`
+  - Outputs to `outputs/erc_usdt/erc_usdt_<LABEL>.csv`
+  - Sheets tabs: `USDT_ETH_<LABEL>_RAW` (or similar).
 
-- Shared wallet tools
-  - core/wallets.py to encapsulate loading and validating wallet_directory.csv.
+- **Shared wallet tools**
+  - `core/wallets.py` to encapsulate loading and validating `wallet_directory.csv`.
   - Better validation and tools to manage multiple chains per client.
 
-- Apps layer
-  - apps/ directory for dedicated CLIs:
-    - apps/tron_usdt_cli.py
-    - apps/eth_usdt_cli.py
-  - Existing scripts/ will wrap these apps for non-technical operators.
+- **Apps layer**
+  - `apps/` directory for dedicated CLIs:
+    - `apps/tron_usdt_cli.py`
+    - `apps/eth_usdt_cli.py`
+  - Existing `scripts/` will wrap these apps for non-technical operators.
 
-- Reporting / dashboards
+- **Reporting / dashboards**
   - Higher-level summary scripts (e.g. daily P&L, per-client flows) built on top of the normalized CSVs/Sheets.
 
 ---
@@ -230,11 +257,12 @@ WalletOS is meant to grow beyond TRON USDT. Planned modules:
 
 - This project uses Poetry for dependency management. Typical dev commands:
 
+```bash
 cd ~/dev/WalletOS
 poetry install                  # first time
 poetry run python tronscan_usdt.py --help
+```
 
-- core/ is the place for shared Python logic. For now it contains the Google Sheets client; Tron and future ETH modules will be added here as the project evolves.
+- `core/` is the place for shared Python logic. For now it contains the Google Sheets client; Tron and future ETH modules will be added here as the project evolves.
 
-- scripts/ is the place for small shell scripts that wrap the CLIs for daily operations.
-
+- `scripts/` is the place for small shell scripts that wrap the CLIs for daily operations.
