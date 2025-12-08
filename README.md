@@ -78,7 +78,7 @@ WalletOS/
 
 - Python 3.12+ (or compatible 3.x).
 - [Poetry](https://python-poetry.org/) installed on the system.
-- A TronScan-compatible TRON address with USDT TRC20 activity.
+- A Tronscan-compatible TRON address with USDT TRC20 activity.
 - (Optional) A Google Cloud service account for Google Sheets.
 
 ---
