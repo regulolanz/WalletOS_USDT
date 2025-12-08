@@ -1,4 +1,5 @@
 import gspread
+from gspread.exceptions import APIError
 from google.oauth2 import service_account
 from pathlib import Path
 
@@ -8,7 +9,7 @@ def get_sheets_client() -> gspread.Client:
     Return an authenticated gspread Client using the service account
     JSON file located at credentials/gsheets_service_account.json relative to this file.
     """
-    root_dir = Path(__file__).resolve().parent
+    root_dir = Path(__file__).resolve().parent.parent
     cred_path = root_dir / "credentials" / "gsheets_service_account.json"
     if not cred_path.exists():
         raise RuntimeError(
@@ -51,5 +52,9 @@ def write_usdt_rows_to_sheet(
     for row in rows:
         values.append([row.get(h, "") for h in headers])
 
-    ws.clear()
-    ws.update("A1", values)
+    try:
+        ws.clear()
+        ws.update("A1", values)
+    except APIError as e:
+        # Do not crash the whole sync; just log a warning.
+        print(f"[WARN] Google Sheets APIError updating {worksheet_name}: {e}")

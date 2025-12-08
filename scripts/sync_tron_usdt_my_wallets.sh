@@ -26,6 +26,6 @@ SHEET_ID="1Jad2PoONt--M-_y3RS6T_eqJwBD9uYpI--BWEE3hWfU"
 cd "$BASE_DIR"
 
 echo "Syncing internal wallets from ${FROM_DATE} to Google Sheet ${SHEET_ID}..."
-poetry run python tronscan_usdt.py my_wallets \
+poetry run python apps/tron_usdt_cli.py my_wallets \
   --from-date "${FROM_DATE}" \
   --sheet-id "${SHEET_ID}"
